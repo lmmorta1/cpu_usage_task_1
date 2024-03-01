@@ -1,9 +1,12 @@
 import sys
 import psutil
-import sqlite3
+import os
+import datetime
+from typing import List , Dict
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QPlainTextEdit
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QIcon
+import PyQt5.QtCore as QtCore
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
@@ -29,48 +32,72 @@ class Cpu(QWidget):
         self.layout.addWidget(QPushButton('1 second', clicked=lambda: self.start_timer(1000)))
         self.layout.addWidget(QPushButton('10 seconds', clicked=lambda: self.start_timer(10000)))
         self.layout.addWidget(QPushButton('1 minute', clicked=lambda: self.start_timer(60000)))
-        self.layout.addWidget(QPushButton('clear logs', clicked=lambda: self.clear_usage_log()))
 
         self.layout.addWidget(self.text_edit)
         self.layout.addWidget(self.canvas)
 
-        self.cpu_data = []
-        self.times = []
+        if not os.path.exists('logs'):
+            os.makedirs('logs')
+
+        self.log_file_name = os.path.join('logs', datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+
+        self.cpu_data: List = []
+        self.times: List = []
+        self.data: Dict = {}
         self.time_elapsed = 0
+        self.update_interval = 1  # По умолчанию вывод каждую секунду
 
+    # Метод для обновления прошедшего времени
     def update_time(self):
-        self.time_elapsed += 1
+        self.time_elapsed += 0
 
+    # Метод для присваивания имени и иконки программы
     def usage_icon_name(self):
         self.setWindowTitle('CPU Usage')
         self.setWindowIcon(QIcon('img/images.png'))
 
-    def start_timer(self, time):
+    # Метод для запуска таймера с заданным интервалом
+    def start_timer(self, interval):
+        self.text_edit.clear()
+        for i in range(len(self.cpu_data) - 1):
+            if self.times[i] % (interval // 1000) == 0 and self.times[i] != 0:
+                self.text_edit.appendPlainText(f'CPU usage: {str(self.cpu_data[i])}%')
+                print(self.cpu_data[i])
+        self.update_interval = interval // 1000
         self.timer.stop()
-        self.timer.start(time)
-        self.timer.timeout.connect(self.update_usage_log)
+        self.timer.start(1000)
+        self.timer.timeout.connect(self.update_cpu_usage)
 
-    def update_usage_log(self):
+    # Метод для обновления использования ЦП и записи данных в файл и на график
+    def update_cpu_usage(self):
         cpu_percent = psutil.cpu_percent()
-        self.text_edit.appendPlainText(f'CPU usage: {cpu_percent}%')
-        with open('cpu_usage.txt', 'a') as f:
-            f.write(f'CPU usage: {cpu_percent}%\n')
         self.cpu_data.append(cpu_percent)
         self.times.append(self.time_elapsed)
-        self.axis.clear()
-        self.axis.plot(self.times, self.cpu_data, color='red')
-        self.canvas.draw()
+        # self.data['CPU Usage'] = cpu_percent
+        # print(self.data['CPU Usage'])
+        with open(self.log_file_name, 'a') as f:
+            f.write(f'Time: {self.time_elapsed}s, CPU usage: {cpu_percent}%\n')
+        if self.time_elapsed % self.update_interval == 0:
+            self.text_edit.appendPlainText(f'CPU usage: {cpu_percent}%')
+            self.axis.clear()
+            self.axis.plot(self.times[::self.update_interval], self.cpu_data[::self.update_interval], color='#2ABf9E')
+            self.axis.set_xlabel("Time (s)")
+            self.axis.set_ylabel("CPU Usage (%)")
+            self.canvas.draw()
+        self.time_elapsed += 1
 
-    def clear_usage_log(self):
-        self.text_edit.clear()
-        with open('cpu_usage.txt', 'wb'):
-            pass
+def main():
+    app = QApplication(sys.argv)
 
+    file = QtCore.QFile("style/style.qss")
+    file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
+    stream = QtCore.QTextStream(file)
+    app.setStyleSheet(stream.readAll())
 
-app = QApplication(sys.argv)
+    window = Cpu()
+    window.show()
 
-window = Cpu()
+    sys.exit(app.exec_())
 
-window.show()
-
-sys.exit(app.exec_())
+if __name__ == '__main__':
+    main()
