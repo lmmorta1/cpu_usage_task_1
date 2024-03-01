@@ -45,7 +45,7 @@ class Cpu(QWidget):
         self.times: List = []
         self.data: Dict = {}
         self.time_elapsed = 0
-        self.update_interval = 1  # По умолчанию вывод каждую секунду
+        self.update_interval = 1 
 
     # Метод для обновления прошедшего времени
     def update_time(self):
