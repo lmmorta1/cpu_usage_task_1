@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Data</title>
+</head>
+<body>
+<div class="this-page">
+    <table id="cpu-table">
+        <tr>
+            <th>Time</th>
+            <th>Percent</th>
+        </tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<style>
+    .this-page{
+        display: flex;
+        justify-content: center;
+    }
+</style>
+    <script>
+        function refreshData() {
+            fetch('/')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('cpu-table').innerHTML = data;
+            });
+        }
+        setInterval(refreshData, 1000);
+    </script>
+</body>
+</html>
