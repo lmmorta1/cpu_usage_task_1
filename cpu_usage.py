@@ -57,7 +57,7 @@ class Cpu(QWidget):
         self.start_timer(databox.ONE_SECOND)
 
     def create_connection(self):
-        """создание файла базы данных"""
+        """Метод для создания файла базы данных"""
         conn = None;
         try:
             conn = sqlite3.connect('cpu_usage.sqlite')
@@ -69,7 +69,7 @@ class Cpu(QWidget):
         return conn
 
     def create_table(self, conn):
-        """создание базы данных"""
+        """Метод для создания базы данных"""
         try:
             conn.execute("DROP TABLE IF EXISTS cpu_usage")
             conn.execute("""
@@ -83,7 +83,7 @@ class Cpu(QWidget):
             print(e)
 
     def delete_old_value_table(self, conn):
-        """очистка базы данных"""
+        """Метод для очистки базы данных"""
         try:
             cursor = conn.cursor()
             cursor.execute("""
@@ -94,7 +94,7 @@ class Cpu(QWidget):
             print(e)
 
     def insert_cpu_usage(self, conn, cpu_percent, time):
-        """ вставка данных в БД"""
+        """Метод для вставки данных в БД"""
         try:
             conn.execute("""
                    INSERT INTO cpu_usage(usage, time) VALUES (?, ?)
@@ -104,7 +104,7 @@ class Cpu(QWidget):
             print(e)
 
     def usage_icon_name(self):
-        """ Метод для присваивания имени и иконки программы"""
+        """Метод для присваивания имени и иконки программы"""
         self.setWindowTitle('CPU Usage')
         self.setWindowIcon(QIcon('img/images.png'))
 
