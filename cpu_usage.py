@@ -13,7 +13,7 @@ from PyQt5.QtGui import QIcon
 import PyQt5.QtCore as QtCore
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from databox import *
+import databox
 
 
 class Cpu(QWidget):
@@ -28,7 +28,7 @@ class Cpu(QWidget):
 
         self.timer = QTimer()
         self.time_timer = QTimer()
-        self.time_timer.start(Const.ONE_SECOND)
+        self.time_timer.start(databox.ONE_SECOND)
         self.text_edit = QPlainTextEdit(self)
         self.text_edit.setReadOnly(True)
 
@@ -37,9 +37,9 @@ class Cpu(QWidget):
         self.axis = self.figure.add_subplot(1, 1, 1)
 
         self.layout = QVBoxLayout(self)
-        self.layout.addWidget(QPushButton('1 second', clicked=lambda: self.start_timer(Const.ONE_SECOND)))
-        self.layout.addWidget(QPushButton('10 seconds', clicked=lambda: self.start_timer(Const.TEN_SECONDS)))
-        self.layout.addWidget(QPushButton('1 minute', clicked=lambda: self.start_timer(Const.ONE_MINUTE)))
+        self.layout.addWidget(QPushButton('1 second', clicked=lambda: self.start_timer(databox.ONE_SECOND)))
+        self.layout.addWidget(QPushButton('10 seconds', clicked=lambda: self.start_timer(databox.TEN_SECONDS)))
+        self.layout.addWidget(QPushButton('1 minute', clicked=lambda: self.start_timer(databox.ONE_MINUTE)))
         self.layout.addWidget(self.text_edit)
         self.layout.addWidget(self.canvas)
 
@@ -54,10 +54,10 @@ class Cpu(QWidget):
         self.time_elapsed: int = 0
         self.update_interval: int = 1
 
-        self.start_timer(Const.ONE_SECOND)
-    """создание файла базы данных"""
+        self.start_timer(databox.ONE_SECOND)
 
     def create_connection(self):
+        """создание файла базы данных"""
         conn = None;
         try:
             conn = sqlite3.connect('cpu_usage.sqlite')
@@ -68,9 +68,8 @@ class Cpu(QWidget):
 
         return conn
 
-    """создание базы данных"""
-
     def create_table(self, conn):
+        """создание базы данных"""
         try:
             conn.execute("DROP TABLE IF EXISTS cpu_usage")
             conn.execute("""
@@ -83,9 +82,8 @@ class Cpu(QWidget):
         except Error as e:
             print(e)
 
-    """очистка базы данных"""
-
     def delete_old_value_table(self, conn):
+        """очистка базы данных"""
         try:
             cursor = conn.cursor()
             cursor.execute("""
@@ -95,19 +93,8 @@ class Cpu(QWidget):
         except Error as e:
             print(e)
 
-    def select_all_cpu_usage(self, conn):
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                   SELECT * FROM cpu_usage
-               """)
-            t = cursor.fetchall()
-        except Error as e:
-            print(e)
-
-    """ вставка данных в БД"""
-
     def insert_cpu_usage(self, conn, cpu_percent, time):
+        """ вставка данных в БД"""
         try:
             conn.execute("""
                    INSERT INTO cpu_usage(usage, time) VALUES (?, ?)
@@ -116,49 +103,47 @@ class Cpu(QWidget):
         except Error as e:
             print(e)
 
-    """ Метод для присваивания имени и иконки программы"""
-
     def usage_icon_name(self):
+        """ Метод для присваивания имени и иконки программы"""
         self.setWindowTitle('CPU Usage')
         self.setWindowIcon(QIcon('img/images.png'))
 
     def stop_timer(self):
+        """Метод остановки таймера, если он используется"""
         if self.timer is not None and self.timer.isActive():
             self.timer.stop()
 
-    """Метод для запуска таймера с заданным интервалом"""
-
     def start_timer(self, interval: int) -> None:
+        """Метод для запуска таймера с заданным интервалом"""
         self.stop_timer()
         self.delete_old_value_table(self.conn)
         self.text_edit.clear()
 
         for i in range(len(self.cpu_data) - 1):
-            if  self.times[i] % (interval // Const.SECONDS_CONVERTER) == 0:
+            if self.times[i] % (interval // databox.SECONDS_CONVERTER) == 0:
                 self.cpu_data_sorted.append(self.cpu_data[i])
                 self.insert_cpu_usage(self.conn, self.cpu_data[i], self.times[i])
 
         for i in range(len(self.cpu_data) - 1):
-            if self.times[i] % (interval // Const.SECONDS_CONVERTER) == 0:
+            if self.times[i] % (interval // databox.SECONDS_CONVERTER) == 0:
                 self.text_edit.appendPlainText(f'CPU usage: {str(self.cpu_data[i])}%')
 
-        self.update_interval = interval // Const.SECONDS_CONVERTER
+        self.update_interval = interval // databox.SECONDS_CONVERTER
         self.axis.clear()
         self.axis.plot(self.times[::self.update_interval], self.cpu_data[::self.update_interval], color='#2ABf9E')
         self.axis.set_xlabel("Time (s)")
         self.axis.set_ylabel("CPU Usage (%)")
         self.canvas.draw()
         self.timer.stop()
-        self.timer.start(Const.ONE_SECOND)
+        self.timer.start(databox.ONE_SECOND)
         try:
             self.timer.timeout.disconnect()
         except TypeError:
-            pass    
+            pass
         self.timer.timeout.connect(self.update_cpu_usage)
 
-    """ Метод для обновления использования ЦП и записи данных в файл и на график"""
-
     def update_cpu_usage(self):
+        """ Метод для обновления использования ЦП и записи данных в файл и на график"""
         cpu_percent = psutil.cpu_percent()
         self.cpu_data.append(cpu_percent)
         self.times.append(self.time_elapsed)
@@ -172,21 +157,16 @@ class Cpu(QWidget):
             self.canvas.draw()
             self.text_edit.appendPlainText(f'CPU usage: {cpu_percent}%')
             self.insert_cpu_usage(self.conn, cpu_percent, self.time_elapsed)
-            self.select_all_cpu_usage(self.conn)
         self.time_elapsed += 1
 
 
-"""Запуск app.py файл, для отображения данных на веб-странице"""
-
-
 def run_app_py():
+    """Запуск app.py файл, для отображения данных на веб-странице"""
     subprocess.Popen(["python", "app.py"])
 
 
-"""открытие веб-страницы"""
-
-
 def open_webpage(url):
+    """открытие веб-страницы"""
     webbrowser.open(url)
 
 

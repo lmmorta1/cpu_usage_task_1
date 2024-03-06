@@ -1,9 +1,6 @@
-class Const:
-    ONE_SECOND = 1000
-    """int: Одна секунда в миллисекундах"""
-    TEN_SECONDS = 10000
-    """int: Десять секунд в миллисекундах"""
-    ONE_MINUTE = 60000
-    """int: Минута в миллисекундах"""
-    SECONDS_CONVERTER = 1000
-    """int: Константа для перевода из миллисекунд в секунды"""
+from typing import Final
+
+ONE_SECOND: Final = 1000  # Одна секунда в миллисекундах
+TEN_SECONDS: Final = 10000  # Десять секунд в миллисекундах
+ONE_MINUTE: Final = 60000  # Одна минута в миллисекундах
+SECONDS_CONVERTER: Final = 1000  # Константа для перевода из миллисекунд в секунды
